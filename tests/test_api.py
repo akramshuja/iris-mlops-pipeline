@@ -19,13 +19,12 @@ def mock_model_load(mocker):
 @pytest.fixture
 def client(mock_model_load):
     """
-
-    This fixture creates a TestClient for our API.
-    Crucially, it depends on the mock_model_load fixture, ensuring the
-    model loading is mocked *before* the application is imported.
+    Creates a TestClient for the API with model loading mocked.
+    This fixture depends on `mock_model_load` to ensure the patch is active
+    before the application is imported.
     """
-    from src.main import app  # Import app here, after the mock is active
-    return TestClient(app)
+    from src import main
+    return TestClient(main.app)
 
 
 def test_read_root(client):
