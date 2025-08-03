@@ -16,33 +16,29 @@ def mock_model_load(mocker):
     return mocker.patch("src.main.mlflow.pyfunc.load_model", return_value=FakeModel())
 
 
-@pytest.fixture
-def client(mock_model_load):
+def test_api_with_mocked_model(mock_model_load):
     """
-    Creates a TestClient for the API with model loading mocked.
-    This fixture depends on `mock_model_load` to ensure the patch is active
-    before the application is imported.
+    Tests the entire API using a mocked model.
+    The TestClient is used as a context manager to handle the app's lifespan.
     """
-    from src import main
-    return TestClient(main.app)
+    # Import the app *after* the mock is potentially active
+    from src.main import app
+    
+    # Use the TestClient as a context manager
+    with TestClient(app) as client:
+        # Test the root endpoint
+        response_root = client.get("/")
+        assert response_root.status_code == 200
+        assert response_root.json() == {"message": "Welcome to the Iris Classifier API!"}
 
-
-def test_read_root(client):
-    """Tests the root endpoint, which doesn't require the model."""
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to the Iris Classifier API!"}
-
-
-def test_predict_endpoint(client):
-    """Tests the /predict endpoint using the mocked model."""
-    test_data = {
-        "sepal_length": 5.1,
-        "sepal_width": 3.5,
-        "petal_length": 1.4,
-        "petal_width": 0.2
-    }
-    response = client.post("/predict", json=test_data)
-    assert response.status_code == 200
-    # Assert that we get the dummy prediction (0) from our FakeModel
-    assert response.json() == {"predicted_species": 0}
+        # Test the predict endpoint
+        test_data = {
+            "sepal_length": 5.1,
+            "sepal_width": 3.5,
+            "petal_length": 1.4,
+            "petal_width": 0.2
+        }
+        response_predict = client.post("/predict", json=test_data)
+        assert response_predict.status_code == 200
+        # Assert that we get the dummy prediction (0) from our FakeModel
+        assert response_predict.json() == {"predicted_species": 0}
