@@ -1,10 +1,10 @@
-# scripts/register_model.py
+import os
 import mlflow
 from mlflow.tracking import MlflowClient
 
 def register_best_model():
     """Finds the best run and registers its model in the MLflow Model Registry."""
-    MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+    MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient()
 
@@ -13,14 +13,15 @@ def register_best_model():
     experiment_id = experiment.experiment_id
 
     # Search for the best run within the experiment
-    runs = mlflow.search_runs(
-        experiment_ids=[experiment_id],
-        order_by=["metrics.accuracy DESC"],
-        max_results=1
+    runs = client.search_runs(
+    experiment_ids=[experiment_id],
+    order_by=["metrics.accuracy DESC"],
+    max_results=1
     )
 
-    if not runs.empty:
-        best_run_id = runs.iloc[0].run_id
+    if runs:
+        # Access the run_id from the 'info' attribute of the first run object
+        best_run_id = runs[0].info.run_id
         model_uri = f"runs:/{best_run_id}/model"
         model_name = "IrisClassifier" # The name for our registered model
 

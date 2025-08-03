@@ -1,4 +1,4 @@
-# scripts/train.py
+import os
 import pandas as pd
 import mlflow
 import mlflow.sklearn
@@ -9,6 +9,9 @@ from sklearn.metrics import accuracy_score
 
 def train_models():
     """Loads data, trains two models, and logs them with MLflow."""
+    MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    
     print("Loading data...")
     # Load the processed data from the DVC-tracked file
     df = pd.read_csv('data/raw/iris.csv')

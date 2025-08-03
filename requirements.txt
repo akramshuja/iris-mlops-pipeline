@@ -3,3 +3,6 @@ scikit-learn
 pandas
 dvc
 mlflow
+fastapi
+uvicorn[standard]
+pydantic
