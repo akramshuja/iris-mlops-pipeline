@@ -1,7 +1,7 @@
 import os
 import mlflow
 import pandas as pd
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
@@ -12,6 +12,11 @@ class IrisInput(BaseModel):
     petal_length: float
     petal_width: float
 
+# --- Model Dependency ---
+def get_model(request: Request):
+    """A dependency function to get the model from the app state."""
+    return request.app.state.model
+
 # --- Lifespan manager for the FastAPI app ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,7 +24,7 @@ async def lifespan(app: FastAPI):
     This function runs on application startup and shutdown.
     It loads the model on startup and stores it in the app's state.
     """
-    print("Application startup...")
+    print("Application startup: Loading model...")
     # Read the tracking URI from an environment variable, with a default for local runs
     MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -48,15 +53,13 @@ app = FastAPI(
 
 # --- Define the prediction endpoint ---
 @app.post("/predict")
-def predict(request: Request, iris_input: IrisInput):
+def predict(iris_input: IrisInput, model = Depends(get_model)):
     """
     Takes Iris flower features and returns the predicted species.
+    The model is now injected as a dependency.
     """
-    # Get the model from the application state
-    model = request.app.state.model
-    
     # Convert Pydantic model to a pandas DataFrame
-    input_data = pd.DataFrame([iris_input.dict()])
+    input_data = pd.DataFrame([iris_input.model_dump()]) # Use model_dump() for Pydantic v2
     
     # Make prediction
     prediction = model.predict(input_data)

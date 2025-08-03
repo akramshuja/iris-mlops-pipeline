@@ -12,4 +12,3 @@ flake8
 requests
 httpx
 pytest-mock
-pytest-asyncio
