@@ -11,3 +11,4 @@ pytest
 flake8
 requests
 httpx
+pytest-mock
