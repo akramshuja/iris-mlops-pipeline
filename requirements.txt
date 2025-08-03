@@ -1,0 +1,4 @@
+# requirements.txt
+scikit-learn
+pandas
+dvc
