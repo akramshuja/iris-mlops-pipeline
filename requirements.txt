@@ -6,3 +6,7 @@ mlflow
 fastapi
 uvicorn[standard]
 pydantic
+# CI/CD
+pytest
+flake8
+requests
