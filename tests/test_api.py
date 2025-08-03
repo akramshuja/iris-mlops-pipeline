@@ -1,30 +1,16 @@
-import pytest
 from fastapi.testclient import TestClient
+from src.main import app
+import pytest
 
-@pytest.fixture
-def mock_model_load(mocker):
+# Mark the test function as an asyncio test
+@pytest.mark.asyncio
+async def test_api_endpoints():
     """
-    This is a pytest fixture that mocks the MLflow model loading function.
-    It replaces the real function with a fake one that returns a dummy model.
+    Tests the API endpoints. The MLflow model loading is automatically
+    mocked by the fixture in conftest.py.
     """
-    class FakeModel:
-        def predict(self, data):
-            # Return a predictable, dummy prediction
-            return [0]
-
-    # Use mocker to patch the real function in src/main.py
-    return mocker.patch("src.main.mlflow.pyfunc.load_model", return_value=FakeModel())
-
-
-def test_api_with_mocked_model(mock_model_load):
-    """
-    Tests the entire API using a mocked model.
-    The TestClient is used as a context manager to handle the app's lifespan.
-    """
-    # Import the app *after* the mock is potentially active
-    from src.main import app
-    
-    # Use the TestClient as a context manager
+    # The TestClient will trigger the app's lifespan events,
+    # but the model loading within it is now safely mocked.
     with TestClient(app) as client:
         # Test the root endpoint
         response_root = client.get("/")
