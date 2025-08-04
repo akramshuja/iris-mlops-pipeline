@@ -19,8 +19,10 @@ def test_api_endpoints():
     Tests the API endpoints. The real model dependency is now
     overridden for the entire test session.
     """
-    # We no longer need to manage the lifespan manually, as the override
-    # prevents the real model loading from ever being called in the tests.
+    # --- ADD THIS LINE ---
+    # Initialize the state required by the endpoint for the test
+    app.state.prediction_count = 0
+
     client = TestClient(app)
 
     # Test the root endpoint
