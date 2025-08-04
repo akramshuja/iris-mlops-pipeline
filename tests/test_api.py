@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from src.main import app, get_model
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # --- Define a fake model and a dependency override function ---
 class FakeModel:
@@ -19,10 +20,9 @@ def test_api_endpoints():
     Tests the API endpoints. The real model dependency is now
     overridden for the entire test session.
     """
-    # --- ADD THIS LINE ---
-    # Initialize the state required by the endpoint for the test
-    app.state.prediction_count = 0
-
+    # Manually instrument the app for testing to create the /metrics endpoint
+    Instrumentator().instrument(app).expose(app)
+    
     client = TestClient(app)
 
     # Test the root endpoint
@@ -40,3 +40,9 @@ def test_api_endpoints():
     response_predict = client.post("/predict", json=test_data)
     assert response_predict.status_code == 200
     assert response_predict.json() == {"predicted_species": 0}
+
+    # Test that the new /metrics endpoint exists
+    response_metrics = client.get("/metrics")
+    assert response_metrics.status_code == 200
+    # Check for a known Prometheus metric in the response text
+    assert 'http_request_duration_seconds' in response_metrics.text
