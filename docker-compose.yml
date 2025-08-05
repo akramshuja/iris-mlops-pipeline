@@ -1,55 +1,27 @@
+version: '3.8'
+
 services:
   # Our Iris API service
   iris-api:
-    build: .
+    build: . # Build the image from the Dockerfile in the current directory
     container_name: iris-api-compose
     ports:
-      - "8000:8000"
+      - "8000:8000" # Map host port 8000 to container port 8000
     environment:
-      # The API now connects to the 'mlflow' container on port 5000
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    # This makes the mlflow service available to the api service
-    depends_on:
-      mlflow:
-        condition: service_healthy # Wait for the mlflow service to be healthy
+      # The API needs to find the MLflow server on the host machine
+      - MLFLOW_TRACKING_URI=http://host.docker.internal:5000
+    # This ensures the container can connect back to the host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # The Prometheus monitoring service
   prometheus:
-    image: prom/prometheus:v2.45.0
+    image: prom/prometheus:v2.45.0 # Use an official Prometheus image
     container_name: prometheus-compose
     ports:
-      - "9090:9090"
+      - "9090:9090" # Map host port 9090 to Prometheus's port
+    # Mount our prometheus.yml config file into the container
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    # This makes the api service available to the prometheus service
-    depends_on:
-      - iris-api
-
-  # The MLflow Tracking Server service
-  mlflow:
-    image: python:3.9-slim # Use a simple python image
-    container_name: mlflow-compose
-    ports:
-      - "5000:5000"
-    # Use a volume to persist the MLflow data outside the container
-    volumes:
-      - mlflow_data:/mlflow
-    working_dir: /mlflow
-    command: >
-      bash -c "pip install mlflow boto3 &&
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri sqlite:///mlflow.db
-      --default-artifact-root /mlflow/artifacts"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s # Add this grace period
-
-volumes:
-  mlflow_data:
