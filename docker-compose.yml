@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Our Iris API service
   iris-api:
@@ -12,7 +10,8 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     # This makes the mlflow service available to the api service
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy # Wait for the mlflow service to be healthy
 
   # The Prometheus monitoring service
   prometheus:
@@ -45,6 +44,11 @@ services:
       --port 5000
       --backend-store-uri sqlite:///mlflow.db
       --default-artifact-root /mlflow/artifacts"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mlflow_data:
