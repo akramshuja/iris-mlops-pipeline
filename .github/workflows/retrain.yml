@@ -1,0 +1,44 @@
+name: Model Retraining
+
+on:
+  # This allows the workflow to be triggered manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  retrain-and-register:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Pull DVC data
+        run: |
+          dvc pull
+
+      - name: Start MLflow Server in Background
+        run: |
+          # Start a local MLflow server as a background process
+          mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns -h 0.0.0.0 -p 5000 &
+          # Give the server a moment to start up
+          sleep 5
+
+      - name: Run training and registration scripts
+        run: |
+          echo "Running training script..."
+          python scripts/train.py
+          echo "Running model registration script..."
+          python scripts/register_model.py
+        env:
+          # Point the scripts to the server running inside this job
+          MLFLOW_TRACKING_URI: http://127.0.0.1:5000
