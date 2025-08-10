@@ -159,4 +159,4 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 
 ---
 
-Feel free to fork, star ⭐, or contribute to improve this pipeline!
+Feel free to fork, star ⭐, or contribute to improve this pipeline!!
